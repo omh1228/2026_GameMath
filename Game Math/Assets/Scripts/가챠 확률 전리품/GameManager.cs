@@ -58,6 +58,8 @@ public class GameManager : MonoBehaviour
     }
 
     
+
+    
     bool RollCrit()
     {
         totalHits++;

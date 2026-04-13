@@ -68,7 +68,7 @@ public class DamageSimulator : MonoBehaviour
     {
         // 정규분포 데미지 계산
         float sd = baseDamage * stdDevMult;
-        float normalDamage = GetNormal1StdDevDamage(baseDamage, sd);
+        float normalDamage = GetNormalStdDevDamage(baseDamage, sd);
 
         // 치명타 판정
         bool isCrit = Random.value < critRate;
@@ -81,6 +81,59 @@ public class DamageSimulator : MonoBehaviour
         // 로그 및 UI 업데이트
         string critMark = isCrit ? "<color=red>[치명타!]</color> " : "";
         logDisplay.text = string.Format("{0}데미지: {1:F1}", critMark, finalDamage);
+        UpdateUI();
+    }
+
+    public void OnMultiAttack()
+    {
+        attackCount = 0;
+        totalDamage = 0;
+        int weakAttackCount = 0;
+        int missCount = 0;
+        float finalDamage = 0;
+        int critCount = 0;
+        float maxDamage = 0;
+
+        for (int i = 0; i < 1000; i++)
+        {
+            float sd = baseDamage * stdDevMult;
+            float normalDamage = GetNormalStdDevDamage(baseDamage, sd);
+
+            if (normalDamage > baseDamage + sd * 2)
+            {
+                bool isCrit = Random.value < critRate;
+                if (isCrit)
+                    critCount++;
+                finalDamage = isCrit ? normalDamage * critMult : normalDamage;
+                weakAttackCount++;
+                finalDamage *= 2f;
+
+            }
+            else if (normalDamage < baseDamage - sd * 2)
+            {
+                missCount++;
+                finalDamage = 0;
+            }
+            else
+            {
+                bool isCrit = Random.value < critRate;
+                if (isCrit)
+                    critCount++;
+                finalDamage = isCrit ? normalDamage * critMult : normalDamage;
+            }
+
+            if (finalDamage > maxDamage)
+                maxDamage = finalDamage;
+
+
+            attackCount++;
+            totalDamage += finalDamage;
+
+        }
+        logDisplay.text = string.Format(
+            "약점 공격 {0}회\n 명중 실패 {1}회\n크리티컬 {2}회\n최대 데미지 {3:F1}"
+            , weakAttackCount, missCount, critCount, maxDamage);
+
         UpdateUI();
     }
 
@@ -99,7 +152,7 @@ public class DamageSimulator : MonoBehaviour
             totalDamage, attackCount, dpa);
     }
 
-    private float GetNormal1StdDevDamage(float mean, float stdDev)
+    private float GetNormalStdDevDamage(float mean, float stdDev)
     {
         float u1 = 1.0f - Random.value;
         float u2 = 1.0f - Random.value;
